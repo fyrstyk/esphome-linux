@@ -213,10 +213,17 @@ int ble_scanner_start(ble_scanner_t *scanner) {
     /* Start BLE scanning (active mode) */
     try {
 		BLEPP::ScanParams params;
+		const char *interval_env = getenv("BLE_SCAN_INTERVAL_MS");
+		const char *window_env = getenv("BLE_SCAN_WINDOW_MS");
+		int interval_ms = interval_env ? atoi(interval_env) : 100;
+		int window_ms = window_env ? atoi(window_env) : 100;
+		if (interval_ms <= 0) interval_ms = 100;
+		if (window_ms <= 0 || window_ms > interval_ms) window_ms = interval_ms;
 		params.scan_type = BLEPP::ScanParams::ScanType::Active;
-		params.interval_ms = 500;  // 500ms for WiFi coexistence
-		params.window_ms = 60;      // 10% duty cycle (~50ms)
+		params.interval_ms = interval_ms;
+		params.window_ms = window_ms;
 		params.filter_duplicates = BLEPP::ScanParams::FilterDuplicates::Off;
+		printf(LOG_PREFIX "Scan params: interval=%dms window=%dms\n", interval_ms, window_ms);
         scanner->scanner->start(params);  /* false = active scanning */
     } catch (const std::exception &e) {
         fprintf(stderr, LOG_PREFIX "Failed to start BLE scanner: %s\n", e.what());
